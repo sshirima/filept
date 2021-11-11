@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block page_content %}
+<h1>Reports</h1>
+<div class="row">
+{% for report in reports %}
+    <div class="col-md-4">
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5 class="card-title">{{ report.title }}</h5>
+                <p class="card-text">{{ report.description }}</p>
+                <a href="{% url 'reports_create' report.name %}"
+                   class="btn btn-primary">
+                    Create report
+                </a>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block page_content %}
+<h1>Nodes</h1>
+<div class="row">
+{% for node in nodes %}
+    <div class="col-md-4">
+        <div class="card mb-2">
+            <div class="card-body">
+                <h5 class="card-title">{{ node.title }}</h5>
+                <p class="card-text">{{ node.description }}</p>
+                <a href="{% url 'userreviews_create' node.name %}"
+                   class="btn btn-primary">
+                    Create User Review
+                </a>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+</div>
+{% endblock %}

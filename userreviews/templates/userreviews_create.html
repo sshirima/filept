@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block page_content %}
+<div class="row container">
+    <h4>Create User Review for: {{ node_name}}</h4>
+</div>
+
+<div class="row container">
+
+    {% if form.errors %}
+    {% for field in form %}
+        {% for error in field.errors %}
+            <div class="alert alert-danger col-md-12">
+            <strong>{{field.name}}</strong>:{{ error|escape }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+        <div class="alert alert-danger col-md-12">
+            <strong>{{field.name}}</strong>:{{ error|escape }}
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if create_success %}
+    
+    {% for exported_file in exported_files %}
+    <div class="alert alert-success col-md-12" role="alert">
+        Report created successful: <a href="{% url 'download_file' exported_file %}">{{exported_file}}</a>
+    </div>
+    {% endfor %}
+
+    {% elif create_fail %}
+    <div class="alert alert-danger col-md-12" role="alert">
+        Fail to create user review for : {{nodename}}
+      </div>
+    {% else %}
+    
+    <form action="{% url 'userreviews_create' nodename %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{form.as_p}}
+        <div class="form-group row">
+            <div class="col-md-5">
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </div>
+            <div class="col-md-7">
+                
+              </div>
+        </div>
+    </form>
+    
+    {% endif %}
+</div>
+{% endblock %}

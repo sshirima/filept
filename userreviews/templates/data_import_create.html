@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block page_content %}
+<div class="row container">
+    <h4>Import data from csv</h4>
+</div>
+
+<div class="row container">
+
+    {% if form.errors %}
+    {% for field in form %}
+        {% for error in field.errors %}
+            <div class="alert alert-danger col-md-12">
+            <strong>{{field.name}}</strong>:{{ error|escape }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+    {% for error in form.non_field_errors %}
+        <div class="alert alert-danger col-md-12">
+            <strong>{{field.name}}</strong>:{{ error|escape }}
+        </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if create_success %}
+    <div class="alert alert-success col-md-12" role="alert">
+        Data import successful
+    </div>
+      
+    {% elif create_fail %}
+    <div class="alert alert-danger col-md-12" role="alert">
+        Data import fails
+      </div>
+    {% else %}
+    
+    <form action="{% url 'data_import_create' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group row">
+            <label for="" class="col-md-5 col-form-label">Input file:</label>
+            <div class="col-sm-7">
+                {{ form.input_file }}
+            </div>
+        </div>
+        
+        <div class="form-group row">
+            <div class="col-md-5">
+                <button type="submit" class="btn btn-primary">Import</button>
+            </div>
+            <div class="col-md-7">
+                
+              </div>
+        </div>
+    </form>
+    
+    {% endif %}
+</div>
+{% endblock %}
