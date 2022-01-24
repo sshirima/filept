@@ -2,7 +2,7 @@
 
 {% block page_content %}
 <div class="row container">
-    <h4>Import data for {{system_name}}</h4>
+    <h4>Upload system logs from: {{system_name}}</h4>
 </div>
 
 <div class="row container">
@@ -23,25 +23,23 @@
     {% endif %}
 
     {% if success %}
+
     <div class="alert alert-success col-md-12" role="alert">
-        Data import successful
         {{data}}
     </div>
-      
+
+    {% elif fail %}
+    <div class="alert alert-danger col-md-12" role="alert">
+        Parsing system logs fails : {{system_name}}
+      </div>
     {% else %}
     
-    <form action="{% url 'data_import_create' system_name %}" method="post" enctype="multipart/form-data">
+    <form action="{% url 'upload_system_logs' system_name %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="form-group row">
-            <label for="" class="col-md-5 col-form-label">Input file:</label>
-            <div class="col-sm-7">
-                {{ form.input_file }}
-            </div>
-        </div>
-        
+        {{form.as_p}}
         <div class="form-group row">
             <div class="col-md-5">
-                <button type="submit" class="btn btn-primary">Import</button>
+                <button type="submit" class="btn btn-primary">Upload</button>
             </div>
             <div class="col-md-7">
                 

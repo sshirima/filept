@@ -29,3 +29,18 @@ class WindowsForm(forms.Form):
 
 class DataImportForm(forms.Form):
     input_file = forms.FileField(validators=[FileExtensionValidator(['csv']), CsvFileValidator({})])
+
+class ImportAdDataForm(forms.Form):
+    input_file = forms.FileField(validators=[FileExtensionValidator(['csv']), CsvFileValidator(settings.CSV_HEADERS['ad_file'])])
+
+class ImportUserreviewDataForm(forms.Form):
+    input_file = forms.FileField(validators=[FileExtensionValidator(['csv']), CsvFileValidator(settings.CSV_HEADERS['user_review_file'])])
+
+class UploadLogsForm(forms.Form):
+    review_date = forms.DateTimeField(initial=datetime.date.today, required=True, widget=forms.widgets.DateInput(attrs={'type': 'date', "class": "form-control",}))
+    log_file = forms.FileField(validators=[FileExtensionValidator(['csv']), CsvFileValidator({})])
+
+class UploadLogsWindowsForm(forms.Form):
+    review_date = forms.DateTimeField(initial=datetime.date.today, required=True, widget=forms.widgets.DateInput(attrs={'type': 'date', "class": "form-control",}))
+    log_file = forms.FileField(validators=[FileExtensionValidator(['xml'])], 
+                                            widget=forms.ClearableFileInput(attrs={'multiple': True}))

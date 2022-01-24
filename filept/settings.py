@@ -41,6 +41,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'userreviews',
     'reports',
+    'django_filters',
+    'bulk_update_or_create',
+    'bootstrap3',
+    'django_tables2',
 ]
 
 MIDDLEWARE = [
@@ -120,6 +124,21 @@ CSV_HEADERS = {
         'Company': {'required':False},
         'Password Expiry Date': {'required':False},
         'Days since password last set': {'required':False},
+    },
+     'user_review_file':{
+        'Username': {'required':True},
+        'Full Name': {'required':False},
+        'Email Address': {'required':False},
+        'Company': {'required':False},
+        'Department': {'required':False},
+        'Manager': {'required':False},
+        'Date Created': {'required':False},
+        'Last Logon': {'required':False},
+        'Last Password Change': {'required':False},
+        'Password Expiry Date': {'required':False},
+        'Password Status': {'required':False},
+        'Account Status': {'required':False},
+        'Authentication Mechanism': {'required':True},
     }
 }
 
@@ -128,7 +147,7 @@ CSV_HEADERS = {
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Africa/Dar_es_Salaam'
 
 USE_I18N = True
 

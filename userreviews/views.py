@@ -2,7 +2,9 @@ from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
 from userreviews.forms import SolarwindsForm, CiscoISEForm, USNUGWForm, WindowsForm, DataImportForm
-from userreviews.handles import create_solarwinds_userreview, create_ise_userreview, create_ugw_usn_userreview, create_windows_userreview, update_or_create_accounts_from_csv
+import userreviews.forms as u_form
+import userreviews.services as u_service
+from userreviews.handlers import create_solarwinds_userreview, create_ise_userreview, create_ugw_usn_userreview, create_windows_userreview
 import os
 import mimetypes
 
@@ -10,67 +12,60 @@ import mimetypes
 
 
 def userreviews(request):
-    all_nodes = [
-        {'name':'usn_ugw','title':'UGW/USN', 'description':'Generate Huawei EPC user review'},
-        {'name':'ise','title':'ISE', 'description':'Generate ISE user review for CDN nodes access'},
-        {'name':'solarwinds','title':'Solarwinds', 'description':'Generate for Solarwinds NPM'},
-        {'name':'windows','title':'Windows', 'description':'Generate Windows servers user review'},
+    systems = [
+        
+        {'name':'solarwinds','title':'Solarwinds', 'description':'Parse logs for Solarwinds NPM server'},
+        {'name':'ise','title':'Cisco ISE', 'description':'Parse logs For Identity Service Engine'},
+        {'name':'Kwale_UGW','title':'Kwale UGW', 'description':'Parse logs For Kwale UGW'},
+        {'name':'Mbezi_UGW','title':'Mbezi UGW', 'description':'Parse logs For Mbezi UGW'},
+        {'name':'MbeziUS9810','title':'Mbezi USN', 'description':'Parse logs For Mbezi USN'},
+        {'name':'KwaleUSN9810','title':'Kwale USN', 'description':'Parse logs For Kwale USN'},
+        {'name':'WIN-Q5K8NDDGDGH','title':'Windows Solarwinds', 'description':'Parse logs For windows server'},
     ]
     context = {
-        'nodes' : all_nodes,
+        'systems' : systems,
     }
     return render(request,'userreviews.html', context)
 
-
-def userreviews_create(request, nodename):
-
-    form = get_form(request, nodename)
-    
-    if request.method == 'GET':
-        context = {'nodename':nodename, 'form': form}
-        return render(request, 'userreviews_create.html', context)
+def upload_system_logs(request, system_name):
+    form = select_upload_log_form(request, system_name)
+    context = {'form': form, 'system_name':system_name}
 
     if request.method == 'POST':
 
-        form = get_form(request, nodename)
+        form = select_upload_log_form(request, system_name)
+        context['form'] = form
 
         if form.is_valid():
-            files = {}
-            if nodename == 'solarwinds':
-                date = form.cleaned_data['review_date']
-                files['last_user_review_file'] = form.cleaned_data['last_user_review_file'].temporary_file_path()
-                files['operation_logs_file'] = form.cleaned_data['operation_logs_file'].temporary_file_path()
-                files['active_directory_file'] = form.cleaned_data['active_directory_file'].temporary_file_path()
-                exported_files = create_solarwinds_userreview(date, files)
-                context = {'create_success': True, 'nodename': nodename, 'exported_files':exported_files}
+            if system_name in ['WIN-Q5K8NDDGDGH']:
+                log_file_path = _get_temporary_file_path(request.FILES.getlist('log_file')) 
+            else:
+                log_file_path = form.cleaned_data['log_file'].temporary_file_path() 
 
-            if nodename == 'ise':
-                date = '2021-09-30'#form.cleaned_data['review_date']
-                files['last_user_review_file'] = 'media/imports/user_review.csv'#form.cleaned_data['last_user_review_file'].temporary_file_path()
-                files['operation_logs_file'] = 'media/imports/ise_dump_09.csv'#form.cleaned_data['operation_logs_file'].temporary_file_path()
-                files['active_directory_file'] = 'media/imports/ad_dump_07.csv'#form.cleaned_data['active_directory_file'].temporary_file_path()
-                exported_files = create_ise_userreview(date, files)
+            operation_logs = u_service.parse_system_logs(system_name, log_file_path)
+            system_accounts = u_service.update_system_accounts(system_name, operation_logs, form.cleaned_data['review_date'])
+            context['data'] = system_accounts
+            context['success'] = True
 
-                context = {'create_success': True, 'nodename': nodename, 'exported_files':exported_files}
+        else: 
+            print('Form not valid')
 
-            if nodename == 'usn_ugw':
-                date = '2021-09-30'#form.cleaned_data['review_date']
-                files['operation_logs_file'] = form.cleaned_data['operation_logs_file'].temporary_file_path()
-                exported_files = create_ugw_usn_userreview(date, files)
-                context = {'create_success': True, 'nodename': nodename, 'exported_files':exported_files}
+    return render(request, 'upload_system_logs.html', context)
 
-            if nodename == 'windows':
-                date = '2021-11-04'#form.cleaned_data['review_date']
-                
-                files['last_user_review_file'] = form.cleaned_data['last_user_review_file'].temporary_file_path()
-                files['operation_logs_file'] = _get_temporary_file_path(request.FILES.getlist('operation_logs_file'))
-                files['active_directory_file'] = form.cleaned_data['active_directory_file'].temporary_file_path()
-                exported_files = create_windows_userreview(date, files)
-                context = {'create_success': True, 'nodename': nodename, 'exported_files':exported_files}
+
+def select_upload_log_form(request, system_name):
+
+    if request.method == 'GET':
+        if system_name in ['solarwinds','ise','Kwale_UGW', 'Mbezi_UGW', 'KwaleUSN9810', 'MbeziUS9810']:
+            return u_form.UploadLogsForm()
         else:
-            context = {'nodename': nodename,'form':form}
+            return u_form.UploadLogsWindowsForm()
 
-        return render(request, 'userreviews_create.html', context)
+    if request.method == 'POST':
+        if system_name in ['solarwinds','ise','Kwale_UGW', 'Mbezi_UGW', 'KwaleUSN9810', 'MbeziUS9810']:
+            return u_form.UploadLogsForm(request.POST, request.FILES)
+        else:
+            return u_form.UploadLogsWindowsForm(request.POST, request.FILES)
 
 
 def download_file(request, filename):
@@ -85,58 +80,102 @@ def download_file(request, filename):
 
 
 def data_import(request):
-    return render(request, 'data_import.html')
+    systems = [
+        {'name':'active_directory','title':'Active Directory', 'description':'Import dump file for AD'},
+        {'name':'ise','title':'ISE', 'description':'Generate ISE user review for CDN nodes access'},
+        {'name':'solarwinds','title':'Solarwinds', 'description':'Generate for Solarwinds NPM'},
+        {'name':'Kwale_UGW','title':'Kwale UGW', 'description':'Kwale UGW'},
+        {'name':'Mbezi_UGW','title':'Mbezi UGW', 'description':'Mbezi UGW'},
+        {'name':'KwaleUSN9810','title':'Kwale USN', 'description':'Kwale USN'},
+        {'name':'MbeziUS9810','title':'Mbezi USN', 'description':'Mbezi USN'},
+    ]
+
+    context = {
+        'systems' : systems,
+    }
+    return render(request, 'data_import.html', context)
 
 
-def data_import_create(request):
-    form = DataImportForm()
-    context = {'form': form}
+def data_import_create(request, system_name):
+
+    form = select_import_data_form(request, system_name)
+    context = {'form': form, 'system_name':system_name}
 
     if request.method == 'POST':
 
-        form = DataImportForm(request.POST, request.FILES)
+        form = select_import_data_form(request, system_name)
 
         if form.is_valid():
-            file_path = form.cleaned_data['input_file'].temporary_file_path()
-            accounts = update_or_create_accounts_from_csv(file_path, 'AD')
-            context = {'create_success': True}
+            
+            if system_name == 'active_directory':
+                ad_temp_file_path = form.cleaned_data['input_file'].temporary_file_path() 
+                context['data'] = u_service.import_ad_data_from_csv(ad_temp_file_path, u_service.columns_ad)
+                context['success'] = True
+
+            else:
+                ur_temp_file_path = form.cleaned_data['input_file'].temporary_file_path() 
+                context['data'] = u_service.import_system_data_from_csv(ur_temp_file_path, u_service.columns_ur, system_name=system_name)
+                context['success'] = True
+
         else:
-            context = {'create_fail':True}
+            print('Errors, Form is invalid')
+            context['form'] = form
+
+
                 
     return render(request, 'data_import_create.html', context)
 
 
-def get_form(request, nodename):
+def select_import_data_form(request, system_name):
     if request.method == 'GET':
-        if nodename == 'solarwinds':
-            return SolarwindsForm()
-
-        if nodename == 'ise':
-            return CiscoISEForm()
-
-        if nodename == 'usn_ugw':
-            return USNUGWForm()
-
-        if nodename == 'windows':
-            return WindowsForm()
-        return None
+        if system_name == 'active_directory':
+            return u_form.ImportAdDataForm()
+        else:
+            return u_form.ImportUserreviewDataForm()
 
     if request.method == 'POST':
-        if nodename == 'solarwinds':
-            return SolarwindsForm(request.POST, request.FILES)
-        
-        if nodename == 'ise':
-            return CiscoISEForm(request.POST, request.FILES)
-        
-        if nodename == 'usn_ugw':
-            return USNUGWForm(request.POST, request.FILES)
-
-        if nodename == 'windows':
-            return WindowsForm(request.POST, request.FILES)
-        return None
+        if system_name == 'active_directory':
+            return u_form.ImportAdDataForm(request.POST, request.FILES)
+        else:
+            return u_form.ImportUserreviewDataForm(request.POST, request.FILES)
+    
 
 def _get_temporary_file_path(files):
     file_paths=[]
     for f in files:
         file_paths.append(f.temporary_file_path())
     return file_paths
+
+
+from django.views.generic import ListView
+from django_tables2 import SingleTableView
+import userreviews.models as ur_models
+import userreviews.tables as ur_tables
+import userreviews.filters as ur_filters
+
+from django_filters.views import FilterView
+from django_tables2.views import SingleTableMixin
+from django_tables2 import RequestConfig
+
+class SystemAccountListView(SingleTableMixin, FilterView):
+    model = ur_models.SystemAccount
+    table_class = ur_tables.SystemAccountTable
+    table_data = ur_models.SystemAccount.objects.filter(system__name = 'ise')
+    template_name = 'accounts.html'
+    paginate_by = 10
+    filterset_class = ur_filters.SystemAccountsFilter
+    context_filter_name = 'filter'
+
+    def get_queryset(self, **kwargs):
+        qs = super(SystemAccountListView, self).get_queryset()
+        self.filter = self.filterset_class(self.request.GET, queryset=qs)
+        return self.filter.qs
+
+    def get_context_data(self, **kwargs):
+        context = super(SystemAccountListView, self).get_context_data()
+        filter = ur_filters.SystemAccountsFilter(self.request.GET, queryset=self.get_queryset(**kwargs))
+        table = ur_tables.SystemAccountTable(filter.qs)
+        RequestConfig(self.request).configure(table)
+        context['filter'] = filter
+        context['table'] = table
+        return context

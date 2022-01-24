@@ -1,19 +1,26 @@
 {% extends "base.html" %}
 
 {% block page_content %}
-<h1>Data import</h1>
+
+<h4>Data import for Systems</h4>
 <div class="row">
+
+    {% for system in systems%}
+
     <div class="col-md-4">
         <div class="card mb-2">
             <div class="card-body">
-                <h5 class="card-title">AD data import</h5>
-                <p class="card-text">Import data from AD dump</p>
-                <a href="{% url 'data_import_create' %}"
+                <h5 class="card-title">{{system.name}}</h5>
+                <p class="card-text">{{system.description}}</p>
+                <a href="{% url 'data_import_create' system.name %}"
                    class="btn btn-primary">
-                    Import Active Directory Data
+                    Import data for {{system.name}}
                 </a>
             </div>
         </div>
     </div>
+{% endfor %}
+
 </div>
+
 {% endblock %}

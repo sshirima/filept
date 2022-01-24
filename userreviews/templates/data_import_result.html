@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block page_content %}
+<div class="row container">
+    <h4>Import data from csv</h4>
+</div>
+
+<div class="row container">
+
+    {% if success %}
+    <div class="alert alert-success col-md-12" role="alert">
+        Data import successful
+    </div>
+    {{data}}
+    {% else %}
+    <div class="alert alert-danger col-md-12" role="alert">
+        Something went wrong, import fails
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

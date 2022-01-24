@@ -44,6 +44,7 @@ def get_accounts_last_login_date(operation_logs):
         .groupby('TargetUserName', as_index=False)
         .last()
     )
+    
 
     remote_desktop_logs = remote_desktop_logs.rename(
         columns={

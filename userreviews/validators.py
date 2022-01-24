@@ -11,18 +11,20 @@ class CsvFileValidator (object):
     def __call__(self, document):
         validation_error_messages = []
 
-        filesize = document.size
-        if filesize > 10485760:
-            raise ValidationError("The maximum file size that can be uploaded is 10MB")
+        #filesize = document.size
+        #if filesize > 10485760:
+        #    raise ValidationError("The maximum file size that can be uploaded is 10MB")
 
         try:
             dialect = csv.Sniffer().sniff(document.read(1024).decode("utf-8"))
-            document.seek(0, 0)
-        except csv.Error:
-            validation_error_messages.append(u'Not a valid CSV file')
-
-        if self.csv_headers:
-            reader = csv.reader(document.read().decode("utf-8").splitlines(), dialect)
+            
+        except csv.Error as e:
+            dialect = 'excel'
+            print('Error, {}'.format(str(e)))
+            #validation_error_messages.append(u'Not a valid CSV file')
+        document.seek(0, 0)
+        if self.csv_headers and not validation_error_messages:
+            reader = csv.reader(document.read().decode("utf-8").splitlines(), dialect=dialect)
             csv_headers = []
             required_headers = [header_name for header_name, values in self.csv_headers.items() if values['required']]
             for y_index, row in enumerate(reader):

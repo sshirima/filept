@@ -32,11 +32,11 @@
 
     {% elif create_fail %}
     <div class="alert alert-danger col-md-12" role="alert">
-        Fail to create user review for : {{nodename}}
+        Fail to create user review for : {{system_name}}
       </div>
     {% else %}
     
-    <form action="{% url 'userreviews_create' nodename %}" method="post" enctype="multipart/form-data">
+    <form action="{% url 'userreviews_create' system_name %}" method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{form.as_p}}
         <div class="form-group row">
